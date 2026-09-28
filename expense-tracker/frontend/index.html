@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --violet: #6C5CE7;
+    --violet-deep: #5849c2;
+    --teal: #00B894;
+    --teal-deep: #00997d;
+    --coral: #FF7A59;
+    --coral-deep: #e6633f;
+    --blue: #2E86DE;
+    --pink: #E84393;
+    --bg-top: #EEF1FF;
+    --bg-bottom: #F4F7FE;
+    --ink: #23243a;
+    --ink-soft: #6b6f8c;
+    --card-line: #e6e8f7;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 2.5rem 2rem;
+    color: var(--ink);
+    background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+    min-height: 100vh;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  .page-head{
+    display:flex; align-items:center; gap: 12px;
+    margin-bottom: 1.75rem;
+  }
+  .page-head .logo{
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--violet), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 16px rgba(108,92,231,0.35);
+    flex-shrink: 0;
+  }
+  .page-head h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px; font-weight: 700; margin: 0;
+  }
+  .page-head p{ margin: 2px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+  #monthTabs{ display:flex; gap:8px; margin-bottom: 1.5rem; flex-wrap:wrap; }
+  .month-btn{
+    padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--card-line);
+    cursor:pointer; background: white; font-size: 13px; font-weight: 500;
+    color: var(--ink-soft); transition: all 0.15s ease;
+    display:flex; align-items:center; gap:6px;
+  }
+  .month-btn:hover{ border-color: var(--violet); color: var(--violet); transform: translateY(-1px); }
+  .month-btn.active{
+    background: linear-gradient(135deg, var(--violet), var(--blue));
+    border-color: transparent; color: white;
+    box-shadow: 0 4px 12px rgba(108,92,231,0.3);
+  }
+
+  form#expenseForm{
+    display:flex; gap: 10px; margin-bottom: 1.75rem; flex-wrap: wrap;
+    background: white; padding: 16px; border-radius: 16px;
+    border: 1px solid var(--card-line);
+    box-shadow: 0 4px 20px rgba(90,90,160,0.06);
+    align-items: center;
+  }
+  .field-wrap{ position: relative; flex: 1; min-width: 140px; }
+  .field-wrap svg{
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; opacity: 0.55;
+  }
+  form#expenseForm input{
+    width: 100%; padding: 10px 12px 10px 34px; border-radius: 10px;
+    border: 1.5px solid var(--card-line); font-size: 13.5px;
+    font-family: 'Inter', sans-serif; color: var(--ink);
+    transition: border-color .15s ease;
+  }
+  form#expenseForm input:focus{ outline: none; border-color: var(--violet); }
+  form#expenseForm button{
+    padding: 10px 20px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+    color: white; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    display:flex; align-items:center; gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,184,148,0.3);
+    transition: transform .12s ease, box-shadow .12s ease;
+    flex-shrink: 0;
+  }
+  form#expenseForm button:hover{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,184,148,0.4); }
+  form#expenseForm button:active{ transform: translateY(0); }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 1.75rem; }
+  .card {
+    background: white; border-radius: 16px; padding: 1.1rem 1.25rem;
+    border: 1px solid var(--card-line);
+    box-shadow: 0 4px 20px rgba(90,90,160,0.06);
+    display:flex; align-items:center; gap: 14px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{ transform: translateY(-2px); box-shadow: 0 8px 24px rgba(90,90,160,0.12); }
+  .card .icon-badge{
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card.violet .icon-badge{ background: rgba(108,92,231,0.12); color: var(--violet); }
+  .card.coral .icon-badge{ background: rgba(255,122,89,0.14); color: var(--coral-deep); }
+  .card.blue .icon-badge{ background: rgba(46,134,222,0.12); color: var(--blue); }
+  .card p.label { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 3px; font-weight: 500; }
+  .card p.value { font-size: 21px; font-weight: 700; margin: 0; font-family: 'Poppins', sans-serif; }
+
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.75rem; }
+  .chart-box {
+    background: white; border-radius: 16px; padding: 1.1rem 1.25rem;
+    border: 1px solid var(--card-line);
+    box-shadow: 0 4px 20px rgba(90,90,160,0.06);
+  }
+  .chart-box h3{
+    font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600;
+    margin: 0 0 10px; color: var(--ink-soft);
+    display:flex; align-items:center; gap: 7px;
+  }
+
+  .table-wrap{
+    background: white; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--card-line);
+    box-shadow: 0 4px 20px rgba(90,90,160,0.06);
+  }
+  .table-wrap h3{
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+    margin: 0; padding: 16px 20px 0; color: var(--ink);
+    display:flex; align-items:center; gap: 8px;
+  }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 11px 20px; font-size: 13.5px; }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 11.5px;
+       border-bottom: 1.5px solid var(--card-line); text-transform: none; }
+  tbody tr{ border-bottom: 1px solid #f0f1fa; transition: background .1s ease; }
+  tbody tr:last-child{ border-bottom: none; }
+  tbody tr:hover{ background: #f8f9ff; }
+  td.amount{ font-weight: 600; }
+  .cat-chip{
+    display:inline-flex; align-items:center; gap: 5px;
+    padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-head">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="14" rx="2"/>
+        <path d="M2 10h20"/>
+        <circle cx="17" cy="15" r="1.5" fill="white" stroke="none"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Expense Tracker</h1>
+      <p>Track spending, spot trends, and stay ahead of next month.</p>
+    </div>
+  </div>
+
+  <div id="monthTabs"></div>
+
+  <form id="expenseForm">
+    <div class="field-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z" opacity="0"/><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <input type="text" id="title" placeholder="Title (e.g. Groceries)" required>
+    </div>
+    <div class="field-wrap" style="max-width:120px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00997d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      <input type="number" id="amount" placeholder="Amount" required>
+    </div>
+    <div class="field-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E84393" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L11 3.83A2 2 0 009.58 3H4a1 1 0 00-1 1v5.58a2 2 0 00.59 1.41l9.58 9.59a2 2 0 002.82 0l4.6-4.6a2 2 0 000-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      <input type="text" id="category" placeholder="Category" required>
+    </div>
+    <div class="field-wrap" style="max-width:160px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2E86DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <input type="date" id="date" required>
+    </div>
+    <button type="submit">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add expense
+    </button>
+  </form>
+
+  <div class="cards">
+    <div class="card violet">
+      <div class="icon-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div><p class="label">Total spend</p><p class="value" id="totalSpend">—</p></div>
+    </div>
+    <div class="card coral">
+      <div class="icon-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L11 3.83A2 2 0 009.58 3H4a1 1 0 00-1 1v5.58a2 2 0 00.59 1.41l9.58 9.59a2 2 0 002.82 0l4.6-4.6a2 2 0 000-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      </div>
+      <div><p class="label">Top category</p><p class="value" id="topCategory">—</p></div>
+    </div>
+    <div class="card blue">
+      <div class="icon-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12l-4-4v3H4v2h14v3z" opacity="0"/><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+      </div>
+      <div><p class="label">Next month forecast</p><p class="value" id="forecast">—</p></div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-box">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C5CE7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+        By category
+      </h3>
+      <canvas id="pieChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2E86DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+        Monthly trend
+      </h3>
+      <canvas id="lineChart"></canvas>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <h3>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#23243a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Entries
+    </h3>
+    <table>
+      <thead><tr><th>Title</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
+      <tbody id="expenseRows"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = "http://localhost:8080/api";
+
+const CHIP_PALETTE = ['#6C5CE7', '#00B894', '#FF7A59', '#2E86DE', '#E84393', '#F5A623'];
+function chipColorFor(category) {
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  return CHIP_PALETTE[Math.abs(hash) % CHIP_PALETTE.length];
+}
+
+let pieChart, lineChart;
+let currentYear, currentMonth;
+
+async function loadAvailableMonths() {
+  const res = await fetch(`${API_BASE}/expenses/months`);
+  const months = await res.json();
+  const tabsDiv = document.getElementById("monthTabs");
+  tabsDiv.innerHTML = "";
+
+  if (months.length === 0) return;
+
+  months.forEach((ym, idx) => {
+    const [year, month] = ym.split("-").map(Number);
+    const label = new Date(year, month - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+    const btn = document.createElement("button");
+    btn.className = "month-btn";
+    btn.textContent = label;
+    btn.onclick = () => selectMonth(year, month, btn);
+    tabsDiv.appendChild(btn);
+    if (idx === 0) selectMonth(year, month, btn);
+  });
+}
+
+async function selectMonth(year, month, btnEl) {
+  currentYear = year;
+  currentMonth = month;
+
+  document.querySelectorAll(".month-btn").forEach(b => b.classList.remove("active"));
+  if (btnEl) btnEl.classList.add("active");
+
+  const res = await fetch(`${API_BASE}/expenses/by-month?year=${year}&month=${month}`);
+  const expenses = await res.json();
+
+  const rows = document.getElementById("expenseRows");
+  rows.innerHTML = "";
+  expenses.forEach(e => {
+    const color = chipColorFor(e.category || '');
+    rows.innerHTML += `<tr>
+      <td>${e.title}</td>
+      <td><span class="cat-chip" style="background:${color}">${e.category}</span></td>
+      <td class="amount">₹${Number(e.amount).toLocaleString()}</td>
+      <td>${e.date}</td>
+    </tr>`;
+  });
+  const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  document.getElementById("totalSpend").textContent = `₹${total.toLocaleString()}`;
+}
+
+async function loadInsights() {
+  const res = await fetch(`${API_BASE}/insights`);
+  const data = await res.json();
+
+  const categories = Object.keys(data.category_breakdown);
+  const amounts = Object.values(data.category_breakdown);
+  const topCategory = categories.length
+    ? categories[amounts.indexOf(Math.max(...amounts))]
+    : "-";
+  document.getElementById("topCategory").textContent = topCategory;
+  document.getElementById("forecast").textContent = `₹${Number(data.next_month_forecast).toLocaleString()}`;
+
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(document.getElementById("pieChart"), {
+    type: "doughnut",
+    data: { labels: categories, datasets: [{ data: amounts, backgroundColor: categories.map(chipColorFor), borderColor: '#ffffff', borderWidth: 2 }] },
+    options: { plugins: { legend: { position: "bottom", labels: { font: { family: "Inter", size: 11 } } } } }
+  });
+
+  const months = data.monthly_trend.map(m => m.month);
+  const totals = data.monthly_trend.map(m => m.total);
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById("lineChart"), {
+    type: "line",
+    data: { labels: months, datasets: [{
+      data: totals, borderColor: "#2E86DE", backgroundColor: "rgba(46,134,222,0.1)",
+      fill: true, tension: 0.35, pointBackgroundColor: "#2E86DE"
+    }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { x: { grid: { display:false }, ticks: { font: { family: "Inter", size: 11 } } },
+                y: { grid: { color: '#f0f1fa' }, ticks: { font: { family: "Inter", size: 11 } } } } }
+  });
+}
+
+document.getElementById("expenseForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const body = {
+    title: document.getElementById("title").value,
+    amount: parseFloat(document.getElementById("amount").value),
+    category: document.getElementById("category").value,
+    date: document.getElementById("date").value
+  };
+  await fetch(`${API_BASE}/expenses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  e.target.reset();
+  await loadAvailableMonths();
+  await loadInsights();
+});
+
+loadAvailableMonths();
+loadInsights();
+</script>
+</body>
+</html>
